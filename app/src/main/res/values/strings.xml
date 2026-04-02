@@ -21,7 +21,7 @@
     <string name="click_here_to_edit_config">点击此处编辑配置</string>
     <string name="app_title_config">配置</string>
     <string name="config_catch_net_pic">抓取网络图片</string>
-    <string name="config_min_space_size">图片不小于（单位/kb）</string>
+    <string name="config_min_space_size">图片不小于（单位/KiB）</string>
     <string name="config_catch_webview_pic">抓取webView图片</string>
     <string name="config_catch_glide_pic">抓取glide框架图片</string>
     <string name="config_save_pic_default_format">当图片格式未知时，保存格式</string>

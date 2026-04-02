@@ -1,20 +1,23 @@
 package com.pic.catcher.base;
 
-import android.app.Fragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 
 /**
  * @author Mingyueyixi
  * @date 2024/9/28 19:28
- * @description
+ * @description BaseFragment migrated to androidx
  */
-public class BaseFragment extends Fragment implements CustomLifecycleOwner{
+public class BaseFragment extends Fragment implements CustomLifecycleOwner {
 
     private CustomLifecycleOwnerDelegate mCustomLifecycleOwnerDelegate = new CustomLifecycleOwnerDelegate();
+
     @NonNull
     @Override
     public CustomLifecycle.State getCurrentState() {
@@ -38,6 +41,11 @@ public class BaseFragment extends Fragment implements CustomLifecycleOwner{
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mCustomLifecycleOwnerDelegate.setCurrentState(CustomLifecycle.State.CREATED);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
     }
 
     @Override
@@ -69,6 +77,4 @@ public class BaseFragment extends Fragment implements CustomLifecycleOwner{
         super.onDestroy();
         mCustomLifecycleOwnerDelegate.setCurrentState(CustomLifecycle.State.DESTROYED);
     }
-
-
 }

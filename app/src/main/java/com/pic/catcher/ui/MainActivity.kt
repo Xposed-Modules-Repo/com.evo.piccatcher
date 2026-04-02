@@ -2,19 +2,17 @@ package com.pic.catcher.ui
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.Menu
 import androidx.core.view.WindowCompat
+import androidx.fragment.app.Fragment
 import com.google.android.material.color.DynamicColors
+import com.pic.catcher.R
 import com.pic.catcher.base.BaseActivity
-import com.pic.catcher.base.FragmentNavigation
-import com.pic.catcher.base.ViewModelProviders
 import com.pic.catcher.databinding.LayoutMainBinding
 import com.pic.catcher.route.AppRouter
 import com.pic.catcher.ui.vm.AppUpdateViewModel
-
+import com.pic.catcher.base.ViewModelProviders
 
 class MainActivity : BaseActivity() {
-    private lateinit var fragmentNavigation: FragmentNavigation
     private lateinit var binding: LayoutMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,11 +25,47 @@ class MainActivity : BaseActivity() {
         
         binding = LayoutMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        fragmentNavigation = FragmentNavigation(this, binding.mainContainer.id)
-        fragmentNavigation.navigate(MainFragment::class.java)
+
+        binding.bottomNavigation.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_settings -> {
+                    switchFragment(SettingsFragment::class.java)
+                    true
+                }
+                R.id.nav_home -> {
+                    switchFragment(HomeFragment::class.java)
+                    true
+                }
+                R.id.nav_other -> {
+                    switchFragment(OtherFragment::class.java)
+                    true
+                }
+                else -> false
+            }
+        }
+
+        // 默认选中中间的首页
+        binding.bottomNavigation.selectedItemId = R.id.nav_home
 
         ViewModelProviders.from(this).get(AppUpdateViewModel::class.java).checkOnEnter(this)
         handleDeeplinkRoute(intent)
+    }
+
+    private fun switchFragment(clazz: Class<out Fragment>) {
+        val tag = clazz.name
+        val transaction = supportFragmentManager.beginTransaction()
+        
+        // 隐藏当前所有 Fragment
+        supportFragmentManager.fragments.forEach { transaction.hide(it) }
+        
+        var fragment = supportFragmentManager.findFragmentByTag(tag)
+        if (fragment == null) {
+            fragment = clazz.newInstance()
+            transaction.add(R.id.mainContainer, fragment, tag)
+        } else {
+            transaction.show(fragment)
+        }
+        transaction.commit()
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -51,20 +85,4 @@ class MainActivity : BaseActivity() {
             }
         }
     }
-
-
-    @Suppress("DEPRECATION")
-    override fun onBackPressed() {
-        if (!fragmentNavigation.navigateBack()) {
-            super.onBackPressed()
-        }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        super.onCreateOptionsMenu(menu)
-        JsonMenuManager.inflate(this, menu)
-        return true
-    }
-
-
 }

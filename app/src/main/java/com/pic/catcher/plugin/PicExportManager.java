@@ -3,9 +3,9 @@ package com.pic.catcher.plugin;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.Bundle;
 import android.os.Environment;
 import android.os.Looper;
+import android.os.ParcelFileDescriptor;
 import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
@@ -23,44 +23,19 @@ import com.pic.catcher.util.PicUtil;
 import com.pic.catcher.util.XLog;
 import com.pic.catcher.util.http.HttpConnectUtil;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.Locale;
 
 /**
- * 图片导出管理器 - 采用跨进程日志系统
+ * 图片导出管理器 - 采用 ContentProvider 跨进程安全写入
  */
 public class PicExportManager {
     private static final String TAG = "PicCatcher";
     private static PicExportManager sInstance;
-    
-    // 强制插件私有路径根目录
-    private static final String BASE_PATH = "/storage/emulated/0/Android/data/com.evo.piccatcher/files";
-
-    /**
-     * 统一日志入口
-     */
-    public void log(String msg) {
-        // XLog 内部已经处理了线程切换和跨进程调用逻辑
-        XLog.i(AppUtil.getContext(), msg);
-    }
-
-    public File getExportDir() {
-        if (ModuleConfig.getInstance().isSaveToInternal()) {
-            // 内部保存：指向插件私有路径
-            File dir = new File(BASE_PATH, "Pictures/" + AppUtil.getContext().getPackageName());
-            if (!dir.exists()) dir.mkdirs();
-            return dir;
-        } else {
-            // 公共保存：Pictures/包名
-            File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), AppUtil.getContext().getPackageName());
-            if (!dir.exists()) dir.mkdirs();
-            return dir;
-        }
-    }
 
     public synchronized static PicExportManager getInstance() {
         if (sInstance == null) {
@@ -69,15 +44,52 @@ public class PicExportManager {
         return sInstance;
     }
 
-    public void exportBitmapFile(File file) {
-        runOnIo(() -> {
-            if (!file.exists()) return;
-            if (ModuleConfig.isLessThanMinSize(file.length())) return;
-            
-            File dest = new File(getExportDir(), file.getName());
-            FileUtils.copyFile(file, dest);
-            log("Success save file: " + dest.getAbsolutePath());
-        });
+    public void log(String msg) {
+        XLog.i(AppUtil.getContext(), msg);
+    }
+
+    /**
+     * 将字节数组通过 ContentProvider 写入插件目录
+     */
+    private void writeToProvider(byte[] data, String fileName) {
+        Context context = AppUtil.getContext();
+        // 构造特定的 Uri: content://com.evo.piccatcher.logprovider/save_pic?name=...&pkg=...
+        Uri uri = LogProvider.CONTENT_URI.buildUpon()
+                .appendPath("save_pic")
+                .appendQueryParameter("name", fileName)
+                .appendQueryParameter("pkg", context.getPackageName())
+                .build();
+
+        try (ParcelFileDescriptor pfd = context.getContentResolver().openFileDescriptor(uri, "w")) {
+            if (pfd != null) {
+                try (FileOutputStream fos = new FileOutputStream(pfd.getFileDescriptor())) {
+                    fos.write(data);
+                    log("Success save (Provider): " + fileName);
+                }
+            }
+        } catch (Exception e) {
+            log("Provider save error: " + e.getMessage());
+            // 如果 Provider 失败，作为兜底保存到宿主私有目录
+            saveToHostPrivate(data, fileName);
+        }
+    }
+
+    /**
+     * 兜底方案：保存到宿主 App 自己的 Android/data 下
+     */
+    private void saveToHostPrivate(byte[] data, String fileName) {
+        try {
+            File dir = AppUtil.getContext().getExternalFilesDir("Pictures");
+            if (dir != null) {
+                File dest = new File(dir, fileName);
+                try (FileOutputStream fos = new FileOutputStream(dest)) {
+                    fos.write(data);
+                    log("Fallback save to host: " + dest.getAbsolutePath());
+                }
+            }
+        } catch (Exception e) {
+            log("All save methods failed: " + e.getMessage());
+        }
     }
 
     public void exportBitmap(Bitmap bitmap) {
@@ -97,17 +109,31 @@ public class PicExportManager {
                 if (bytes.length == 0 || ModuleConfig.isLessThanMinSize(bytes.length)) return;
 
                 String fileName = Md5Util.get(bytes) + "." + format;
-                File dest = new File(getExportDir(), fileName);
-                if (dest.exists()) return;
 
-                try (FileOutputStream fos = new FileOutputStream(dest)) {
-                    IOUtil.writeByByte(bytes, fos);
-                    log("Success save bitmap: " + dest.getAbsolutePath());
+                if (ModuleConfig.getInstance().isSaveToInternal()) {
+                    writeToProvider(bytes, fileName);
+                } else {
+                    saveToPublic(bytes, fileName);
                 }
             } catch (Exception e) {
-                log("Error save bitmap: " + e.getMessage());
+                log("Export bitmap error: " + e.getMessage());
             }
         });
+    }
+
+    private void saveToPublic(byte[] data, String fileName) {
+        try {
+            File publicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+            File dir = new File(publicDir, "PicCatcher/" + AppUtil.getContext().getPackageName());
+            if (!dir.exists()) dir.mkdirs();
+            File dest = new File(dir, fileName);
+            try (FileOutputStream fos = new FileOutputStream(dest)) {
+                fos.write(data);
+                log("Success save public: " + dest.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            log("Public save error: " + e.getMessage());
+        }
     }
 
     public void exportByteArray(final byte[] dataBytes, String lastName) {
@@ -115,20 +141,28 @@ public class PicExportManager {
         if (ModuleConfig.isLessThanMinSize(dataBytes.length)) return;
         
         runOnIo(() -> {
-            try {
-                String suffix = TextUtils.isEmpty(lastName) ? PicUtil.detectImageType(dataBytes, "bin") : lastName;
-                if (!suffix.startsWith(".")) suffix = "." + suffix;
-                
-                String fileName = Md5Util.get(dataBytes) + suffix;
-                File dest = new File(getExportDir(), fileName);
-                if (dest.exists()) return;
+            String suffix = TextUtils.isEmpty(lastName) ? PicUtil.detectImageType(dataBytes, "bin") : lastName;
+            if (!suffix.startsWith(".")) suffix = "." + suffix;
+            String fileName = Md5Util.get(dataBytes) + suffix;
 
-                try (FileOutputStream fos = new FileOutputStream(dest)) {
-                    IOUtil.writeByByte(dataBytes, fos);
-                    log("Success save bytes: " + dest.getAbsolutePath());
-                }
+            if (ModuleConfig.getInstance().isSaveToInternal()) {
+                writeToProvider(dataBytes, fileName);
+            } else {
+                saveToPublic(dataBytes, fileName);
+            }
+        });
+    }
+
+    public void exportBitmapFile(File file) {
+        runOnIo(() -> {
+            if (!file.exists()) return;
+            try (FileInputStream fis = new FileInputStream(file);
+                 ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                // 使用项目中已有的 FileUtils.copyFile 替代找不到的 IOUtil.copy
+                FileUtils.copyFile(fis, bos);
+                exportByteArray(bos.toByteArray(), MimeTypeMap.getFileExtensionFromUrl(file.getAbsolutePath()));
             } catch (Exception e) {
-                log("Save bytes error: " + e.getMessage());
+                log("Export file error: " + e.getMessage());
             }
         });
     }
@@ -138,21 +172,12 @@ public class PicExportManager {
             if (TextUtils.isEmpty(url)) return;
             String fileEx = MimeTypeMap.getFileExtensionFromUrl(url).toLowerCase(Locale.ROOT);
             if (URLUtil.isHttpUrl(url) || URLUtil.isHttpsUrl(url)) {
-                exportHttpPicUrlIfNeed(url, fileEx);
-            } else if (URLUtil.isFileUrl(url)) {
-                File file = new File(java.net.URI.create(url));
-                if (PicUtil.isPicSuffix(fileEx) || PicUtil.isPicSuffix(PicUtil.detectImageType(file, ""))) {
-                    exportBitmapFile(file);
-                }
+                HttpConnectUtil.request("GET", url, null, null, true, response -> {
+                    byte[] body = response.getBody();
+                    if (body != null) exportByteArray(body, fileEx);
+                    return null;
+                });
             }
-        });
-    }
-
-    private void exportHttpPicUrlIfNeed(String url, String fileEx) {
-        HttpConnectUtil.request("GET", url, null, null, true, response -> {
-            byte[] body = response.getBody();
-            exportByteArray(body, fileEx);
-            return null;
         });
     }
 

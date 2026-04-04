@@ -48,6 +48,16 @@ fun CharSequence?.toIntElse(fallback: Int): Int = try {
     fallback
 }
 
+fun CharSequence?.toDoubleElse(fallback: Double): Double = try {
+    if (this == null) {
+        fallback
+    } else {
+        java.lang.Double.parseDouble(this.toString())
+    }
+} catch (e: Exception) {
+    fallback
+}
+
 fun TextView.setTextColorTheme(color: Int) {
     if (ResUtil.isAppNightMode(this.context)) {
         setTextColor(ColorUtilX.invertColor(color))

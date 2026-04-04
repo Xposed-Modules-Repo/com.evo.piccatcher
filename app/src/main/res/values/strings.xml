@@ -22,11 +22,12 @@
     <string name="app_title_config">配置</string>
     <string name="config_catch_net_pic">抓取网络图片</string>
     <string name="config_min_space_size">图片不小于（单位/KiB）</string>
+    <string name="config_max_log_size">日志大小上限（单位/MiB）</string>
     <string name="config_catch_webview_pic">抓取webView图片</string>
     <string name="config_catch_glide_pic">抓取glide框架图片</string>
     <string name="config_save_to_internal">图片保存到内部</string>
     <string name="config_save_to_internal_off">图片会保存到/Pictures</string>
-    <string name="config_save_to_internal_on">图片会保存到/Android/data/com.evo.piccatcher</string>
+    <string name="config_save_to_internal_on">图片会保存到/sdcard/Android/data/com.evo.piccatcher/files/Pictures</string>
     <string name="config_save_pic_default_format">当图片格式未知时，保存格式</string>
     <string name="spinner_des_jpg_format">jpg格式，图片质量低，大小小，不支持透明像素</string>
     <string name="spinner_des_webp_format">webp是google设计的一种图片格式，图片质量高，压缩质量比jpeg更高，支持透明像素</string>

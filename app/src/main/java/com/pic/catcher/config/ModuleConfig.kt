@@ -33,11 +33,26 @@ class ModuleConfig(var source: JSONObject) {
             source.put("isCatchNetPic", value)
         }
 
+    var isCatchDrawablePic: Boolean = true
+        get() = JSONX.optBoolean(source, "isCatchDrawablePic", true)
+        set(value) {
+            field = value
+            source.put("isCatchDrawablePic", value)
+        }
+
     var minSpaceSize = 0
         get() = JSONX.optLong(source, "minSpaceSize", 0).toInt()
         set(value) {
             field = value
             source.put("minSpaceSize", value)
+        }
+
+    // 修改：日志最大限制改为 Double 以支持小数 (MiB)
+    var maxLogSizeMiB = 2.0
+        get() = JSONX.optDouble(source, "maxLogSizeMiB", 2.0)
+        set(value) {
+            field = value
+            source.put("maxLogSizeMiB", value)
         }
 
     var isSaveToInternal: Boolean = false

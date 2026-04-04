@@ -17,10 +17,14 @@ import com.lu.magic.util.log.LogUtil;
 import com.lu.magic.util.log.SimpleLogger;
 import com.pic.catcher.plugin.BitmapCatcherPlugin;
 import com.pic.catcher.plugin.CanvasCatcherPlugin;
+import com.pic.catcher.plugin.CoilCatcherPlugin;
 import com.pic.catcher.plugin.DrawableCatcherPlugin;
 import com.pic.catcher.plugin.FrescoCatcherPlugin;
 import com.pic.catcher.plugin.GlideCatcherPlugin;
+import com.pic.catcher.plugin.ImageDecoderCatcherPlugin;
+import com.pic.catcher.plugin.ImageViewCatcherPlugin;
 import com.pic.catcher.plugin.MovieCatcherPlugin;
+import com.pic.catcher.plugin.NativeBitmapCatcherPlugin;
 import com.pic.catcher.plugin.OKHttpPlugin;
 import com.pic.catcher.plugin.WebViewCatcherPlugin;
 import com.pic.catcher.plugin.X5WebViewCatcherPlugin;
@@ -205,7 +209,11 @@ public class MainHook implements IXposedHookLoadPackage, IXposedHookZygoteInit, 
                 FrescoCatcherPlugin.class,
                 DrawableCatcherPlugin.class,
                 CanvasCatcherPlugin.class,
-                MovieCatcherPlugin.class
+                MovieCatcherPlugin.class,
+                ImageViewCatcherPlugin.class,
+                ImageDecoderCatcherPlugin.class,
+                CoilCatcherPlugin.class,
+                NativeBitmapCatcherPlugin.class
         ).handleHooks(context, lpparam);
 
     }

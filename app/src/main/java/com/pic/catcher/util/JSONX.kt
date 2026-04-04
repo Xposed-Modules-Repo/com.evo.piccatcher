@@ -47,6 +47,22 @@ class JSONX {
         }
 
         @JvmStatic
+        fun optInt(json: JSONObject?, name: String, fallback: Int = 0): Int {
+            if (json == null || json.isNull(name)) {
+                return fallback
+            }
+            return json.optInt(name, fallback)
+        }
+
+        @JvmStatic
+        fun optDouble(json: JSONObject?, name: String, fallback: Double = 0.0): Double {
+            if (json == null || json.isNull(name)) {
+                return fallback
+            }
+            return json.optDouble(name, fallback)
+        }
+
+        @JvmStatic
         fun optBoolean(source: JSONObject?, name: String, fallback: Boolean = false): Boolean {
             if (source == null) {
                 return fallback
@@ -68,14 +84,12 @@ class JSONX {
 
         @JvmStatic
         fun optString(json: JSONObject?, name: String, fallback: String? = null): String? {
-            if (json == null) {
-                return null
-            }
-            if (json.isNull(name)) {
-                return null
+            if (json == null || json.isNull(name)) {
+                return fallback
             }
             return try {
-                json.optString(name, fallback)
+                // 修复 Kotlin 对 Android JSONObject.optString(String, String) 非空检查的报错
+                json.optString(name, fallback ?: "")
             } catch (e: Exception) {
                 fallback
             }

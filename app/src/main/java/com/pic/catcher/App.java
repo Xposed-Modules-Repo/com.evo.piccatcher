@@ -4,6 +4,7 @@ import android.app.Application;
 
 import androidx.annotation.NonNull;
 
+import com.google.android.material.color.DynamicColors;
 import com.lu.lposed.api2.XposedHelpers2;
 import com.lu.magic.util.log.LogUtil;
 import com.lu.magic.util.log.SimpleLogger;
@@ -20,6 +21,8 @@ public final class App extends Application implements CustomLifecycleOwner {
 
     public void onCreate() {
         super.onCreate();
+        // 启用全局 Material You 动态取色
+        DynamicColors.applyToActivitiesIfAvailable(this);
 
         Companion.setInstance(this);
         AppConfigUtil.Companion.init();

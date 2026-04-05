@@ -68,7 +68,7 @@ android {
         minSdk 24
         targetSdk TARGET_SDK_VERSION.toInteger()
         versionCode 41
-        versionName "v3.5.9-evo"
+        versionName "v3.5.11-evo"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 

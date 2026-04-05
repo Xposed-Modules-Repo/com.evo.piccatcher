@@ -4,7 +4,7 @@
 
 本项目仓库地址[Evo-PicCatcher](https://github.com/Evo-creative/Evo-PicCatcher)
 
-本项目基于 [PicCatcher（图片捕手）]https://github.com/Mingyueyixi/PicCatcher 修改与扩展。
+本项目基于 `https://github.com/Mingyueyixi/PicCatcher` 修改与扩展。
 
 ## 项目介绍
 

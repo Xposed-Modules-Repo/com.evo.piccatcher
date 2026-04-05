@@ -19,7 +19,7 @@ If you have any feature suggestions, feel free to open an Issue. Contributions a
 - Option to save images to the app's private directory (`Android/data`), preventing them from appearing in gallery apps  
 - Added logging functionality for easier debugging and issue tracking  
 
-## 效果展示
+## Demo
 
 | Main | Settings |
 |--------|--------|

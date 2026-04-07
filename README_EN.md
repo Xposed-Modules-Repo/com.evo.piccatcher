@@ -17,7 +17,9 @@ If you have any feature suggestions, feel free to open an Issue. Contributions a
 - Added more image capture methods:
   - ImageDecoder  
   - Coil  
-  - Native  
+  - Add FileCatcher support  
+  - Add RenderNode interception  
+  - Add Surface-level monitoring  
 - Option to save images to the app's private directory (`Android/data`), preventing them from appearing in gallery apps  
 - Added logging functionality for easier debugging and issue tracking  
 
